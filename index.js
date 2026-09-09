@@ -66,6 +66,13 @@ process.on('unhandledRejection', error => {
     console.error('Unhandled rejection:', error);
 });
 
+const STAFF_COMMANDS = [
+    'make',
+    'delete',
+    'activity',
+    'messages'
+];
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -346,23 +353,26 @@ async function handleInteraction(interaction) {
     }
 
 
-    // =================================================
-    // ROLE CHECK
-    // =================================================
+   // =================================================
+// COMMAND PERMISSIONS
+// =================================================
 
-    if (
-        !interaction.member.roles.cache.some(
+if (STAFF_COMMANDS.includes(commandName)) {
+
+    const hasPermission =
+        interaction.member.roles.cache.some(
             role => allowedRoleIds.includes(role.id)
-        )
-    ) {
+        );
 
+    if (!hasPermission) {
         return interaction.reply({
             content:
                 '❌ You do not have permission to use this command.',
             ephemeral: true
         });
     }
-        // =================================================
+}
+    // =================================================
     // /activity
     // =================================================
 
