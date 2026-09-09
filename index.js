@@ -10,6 +10,46 @@ const {
     Routes
 } = require('discord.js');
 
+const SERVER_ID = '237d9994-3569-40ac-a0f0-af90c1b60a3d';
+
+async function startMinecraftServer() {
+    const res = await fetch(
+        `https://api.mcserverhost.com/user/servers/${SERVER_ID}/power`,
+        {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.MCHOSTS_TOKEN}`,
+                'X-Csrf-Token': process.env.MCHOSTS_CSRF,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'start',
+                wait_seconds: 0
+            })
+        }
+    );
+
+    const responseText = await res.text();
+
+    if (res.status === 401) {
+        throw new Error(
+            'Authentication failed (401). Check MCHOSTS_TOKEN and MCHOSTS_CSRF.'
+        );
+    }
+
+    if (!res.ok) {
+        throw new Error(
+            `Start failed: ${res.status} ${responseText}`
+        );
+    }
+
+    try {
+        return JSON.parse(responseText);
+    } catch {
+        return responseText;
+    }
+}
+
 if (!process.env.ALLOWED_ROLE_IDS) {
     console.error(
         '❌ ALLOWED_ROLE_IDS is missing from your .env file.\n' +
@@ -99,7 +139,6 @@ function saveCustomCommands() {
     );
 }
 
-
 // =====================================================
 // DISCORD REST
 // =====================================================
@@ -118,10 +157,38 @@ client.once('ready', async () => {
 
     console.log('Loading custom commands...');
 
+    // Register /startserver
+    try {
+        await rest.post(
+            Routes.applicationGuildCommands(
+                client.user.id,
+                process.env.GUILD_ID
+            ),
+            {
+                body: {
+                    name: 'startserver',
+                    description: 'Start the Minecraft server'
+                }
+            }
+        );
+
+        console.log('Loaded /startserver');
+
+    } catch (error) {
+        console.error(
+            'Could not load /startserver:',
+            error
+        );
+    }
+
     // Re-register saved custom commands
     for (const guildId of Object.keys(customCommands)) {
 
-        for (const commandName of Object.keys(customCommands[guildId])) {
+        for (
+            const commandName of Object.keys(
+                customCommands[guildId]
+            )
+        ) {
 
             try {
 
@@ -133,7 +200,8 @@ client.once('ready', async () => {
                     {
                         body: {
                             name: commandName,
-                            description: `Custom command: ${commandName}`
+                            description:
+                                `Custom command: ${commandName}`
                         }
                     }
                 );
@@ -193,15 +261,16 @@ client.on('interactionCreate', async interaction => {
 
     try {
         await handleInteraction(interaction);
+
     } catch (error) {
         console.error('Interaction error:', error);
     }
 });
 
+
 async function handleInteraction(interaction) {
 
     if (!interaction.isChatInputCommand()) return;
-
 
     const commandName = interaction.commandName;
 
@@ -236,7 +305,8 @@ async function handleInteraction(interaction) {
         });
 
         const roundTrip =
-            sent.createdTimestamp - interaction.createdTimestamp;
+            sent.createdTimestamp -
+            interaction.createdTimestamp;
 
         const wsLatency =
             Math.round(client.ws.ping);
@@ -250,10 +320,65 @@ async function handleInteraction(interaction) {
 
 
     // =================================================
+    // /startserver
+    // =================================================
+
+    if (commandName === 'startserver') {
+
+        if (
+            !interaction.member.roles.cache.some(
+                role => allowedRoleIds.includes(role.id)
+            )
+        ) {
+            return interaction.reply({
+                content:
+                    '❌ You do not have permission to use this command.',
+                ephemeral: true
+            });
+        }
+
+        await interaction.deferReply({
+            ephemeral: true
+        });
+
+        try {
+
+            const result =
+                await startMinecraftServer();
+
+            console.log(
+                'Minecraft server start response:',
+                result
+            );
+
+            return interaction.editReply(
+                '🚀 **Minecraft server start request sent successfully!**'
+            );
+
+        } catch (error) {
+
+            console.error(
+                'Minecraft server start error:',
+                error
+            );
+
+            return interaction.editReply(
+                `❌ **Failed to start the Minecraft server.**\n\n` +
+                `\`${error.message}\``
+            );
+        }
+    }
+
+
+    // =================================================
     // ROLE CHECK
     // =================================================
 
-    if (!interaction.member.roles.cache.some(role => allowedRoleIds.includes(role.id))) {
+    if (
+        !interaction.member.roles.cache.some(
+            role => allowedRoleIds.includes(role.id)
+        )
+    ) {
 
         return interaction.reply({
             content:
@@ -261,9 +386,7 @@ async function handleInteraction(interaction) {
             ephemeral: true
         });
     }
-
-
-    // =================================================
+        // =================================================
     // /activity
     // =================================================
 
@@ -381,7 +504,8 @@ async function handleInteraction(interaction) {
             'messages',
             'make',
             'delete',
-            'customcommands'
+            'customcommands',
+            'startserver'
         ];
 
         if (builtInCommands.includes(name)) {
@@ -401,7 +525,8 @@ async function handleInteraction(interaction) {
 
 
         // Save message
-        customCommands[interaction.guildId][name] = message;
+        customCommands[interaction.guildId][name] =
+            message;
 
         saveCustomCommands();
 

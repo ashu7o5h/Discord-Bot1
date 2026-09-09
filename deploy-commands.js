@@ -72,7 +72,12 @@ const commands = [
     // /customcommands
     new SlashCommandBuilder()
         .setName('customcommands')
-        .setDescription('List all custom commands')
+        .setDescription('List all custom commands'),
+
+    // /startserver
+    new SlashCommandBuilder()
+        .setName('startserver')
+        .setDescription('Start the Minecraft server'),
 
 ].map(command => command.toJSON());
 
