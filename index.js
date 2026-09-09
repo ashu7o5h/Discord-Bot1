@@ -157,30 +157,6 @@ client.once('ready', async () => {
 
     console.log('Loading custom commands...');
 
-    // Register /startserver
-    try {
-        await rest.post(
-            Routes.applicationGuildCommands(
-                client.user.id,
-                process.env.GUILD_ID
-            ),
-            {
-                body: {
-                    name: 'startserver',
-                    description: 'Start the Minecraft server'
-                }
-            }
-        );
-
-        console.log('Loaded /startserver');
-
-    } catch (error) {
-        console.error(
-            'Could not load /startserver:',
-            error
-        );
-    }
-
     // Re-register saved custom commands
     for (const guildId of Object.keys(customCommands)) {
 
