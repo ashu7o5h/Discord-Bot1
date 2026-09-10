@@ -308,52 +308,38 @@ async function handleInteraction(interaction) {
 
     if (commandName === 'startserver') {
 
-        if (
-            !interaction.member.roles.cache.some(
-                role => allowedRoleIds.includes(role.id)
-            )
-        ) {
-            return interaction.reply({
-                content:
-                    '❌ You do not have permission to use this command.',
-                ephemeral: true
-            });
-        }
-
         await interaction.deferReply({
-            ephemeral: true
-        });
+        ephemeral: true
+    });
 
-        try {
+    try {
 
-            const result =
-                await startMinecraftServer();
+        const result = await startMinecraftServer();
 
-            console.log(
-                'Minecraft server start response:',
-                result
-            );
+        console.log(
+            'Minecraft server start response:',
+            result
+        );
 
-            return interaction.editReply(
-                '🚀 **Minecraft server start request sent successfully!**'
-            );
+        return interaction.editReply(
+            '🚀 **Minecraft server start request sent successfully!**'
+        );
 
-        } catch (error) {
+    } catch (error) {
 
-            console.error(
-                'Minecraft server start error:',
-                error
-            );
+        console.error(
+            'Minecraft server start error:',
+            error
+        );
 
-            return interaction.editReply(
-                `❌ **Failed to start the Minecraft server.**\n\n` +
-                `\`${error.message}\``
-            );
-        }
+        return interaction.editReply(
+            `❌ **Failed to start the Minecraft server.**\n\n` +
+            `\`${error.message}\``
+        );
     }
-
-
-   // =================================================
+}
+    
+// =================================================
 // COMMAND PERMISSIONS
 // =================================================
 
